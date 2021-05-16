@@ -6,7 +6,7 @@
 #SBATCH -o cephfs_bench/slurm-%j.out
 
 BASE_DIR="$HOME/cephfs_bench"
-WORK_DIR="$BASE_DIR/benchmark_`date +%s`"
+WORK_DIR="$BASE_DIR/benchmark_$SLURM_JOB_ID"
 
 # find an mpicc
 if  [ "x`which mpicc`" == "x" ]
