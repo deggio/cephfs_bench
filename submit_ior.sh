@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH --nodes=2
+#SBATCH --nodes=1
 #SBATCH --exclusive
 #SBATCH --time=0:10:00
 #SBATCH -e cephfs_bench/slurm-%j.err
@@ -7,6 +7,13 @@
 
 BASE_DIR="$HOME/cephfs_bench"
 WORK_DIR="$BASE_DIR/benchmark_$SLURM_JOB_ID"
+
+
+## IOR parameters
+# filesize (-b) is how much a single IOR thread will write/read
+FILESIZE="1000m"
+# transfer size (-t) is how much is used for I/O
+TRANSFERSIZE="1m"
 
 # find an mpicc
 if  [ "x`which mpicc`" == "x" ]
@@ -26,6 +33,10 @@ echo "print sinfo"
 sinfo -a
 echo "print slurm nodelist"
 echo $SLURM_JOB_NODELIST
+echo "print queue info"
+squeue
+echo "print fs info"
+lsof $BASE_DIR
 
 # create and change dir
 mkdir -p $BASE_DIR && cd $BASE_DIR
@@ -61,11 +72,14 @@ mkdir -p $WORK_DIR && cd $WORK_DIR
 TOTAL_THREAD=$((SLURM_JOB_NUM_NODES*SLURM_CPUS_ON_NODE))
 THREAD_PER_NODE=$SLURM_CPUS_ON_NODE
 # run ior
-mpirun -np $TOTAL_THREAD -npernode $THREAD_PER_NODE --mca btl self,tcp $IOR -b 8m -t 4m -a POSIX -wr -i1 -g -F -e -o $WORK_DIR/test -k # -O summaryFormat=CSV -O summaryFile=$WORK_DIR/ior.summary
+mpirun -np $TOTAL_THREAD -npernode $THREAD_PER_NODE --mca btl self,tcp $IOR -b $FILESIZE -t $TRANSFERSIZE -a POSIX -wr -i1 -g -F -e -o $WORK_DIR/test -k # -O summaryFormat=CSV -O summaryFile=$WORK_DIR/ior.summary
 
 # run gnu parallel to read md5sum
 scontrol show hostnames  $SLURM_JOB_NODELIST > nodelist
-$GNUP  -j 0 --sshloginfile  nodelist /usr/bin/time -v -o $WORK_DIR/md5sum.\`hostname\`.{} md5sum $WORK_DIR/test.000000{} ::: `seq -w 00 $((TOTAL_THREAD-1))`
+# avoid gnu parallel with ssh due to ssh policies
+# $GNUP  -j 0 --sshloginfile  nodelist /usr/bin/time -v -o $WORK_DIR/md5sum.\`hostname\`.{} md5sum $WORK_DIR/test.000000{} ::: `seq -w 00 $((TOTAL_THREAD-1))`
+# run gnu parallel 
+$GNUP -j $THREAD_PER_NODE  /usr/bin/time -v -o $WORK_DIR/md5sum.\`hostname\`.{} md5sum $WORK_DIR/test.000000{} ::: `seq -w 00 $((THREAD_PER_NODE-1))`
 rm -rf $WORK_DIR/test.00000*
 
 
