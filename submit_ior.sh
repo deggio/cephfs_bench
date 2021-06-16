@@ -55,8 +55,8 @@ then
 	cp $BASE_DIR/ior_build/build/bin/* $BASE_DIR/bin
         cd $BASE_DIR
         wget https://ftpmirror.gnu.org/parallel/parallel-20210522.tar.bz2
-	tar -jxvf parallel-latest.tar.bz2
-        cd parallel-20210422/       
+	tar -jxvf parallel-20210522.tar.bz2
+        cd parallel-20210522
         ./configure --prefix=`pwd`/build &>> parallel_build.log
         make && make install
 	cp $BASE_DIR/parallel-20210522/build/bin/* $BASE_DIR/bin
