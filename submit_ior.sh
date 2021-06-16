@@ -19,6 +19,7 @@ TRANSFERSIZE="1m"
 if  [ "x`which mpicc`" == "x" ]
 then
   module=`module avail 2>&1 | grep openmpi | head -1  | awk '{print $1}'`
+  module=`module avail 2>&1 | xargs -n1 | grep ^openmpi | head -1  | awk '{print $1}'`
   module load $module
 fi
 
@@ -53,12 +54,12 @@ then
 	ldd build/bin/ior &>> ior_build.log
 	cp $BASE_DIR/ior_build/build/bin/* $BASE_DIR/bin
         cd $BASE_DIR
-        wget https://ftpmirror.gnu.org/parallel/parallel-latest.tar.bz2
+        wget https://ftpmirror.gnu.org/parallel/parallel-20210522.tar.bz2
 	tar -jxvf parallel-latest.tar.bz2
         cd parallel-20210422/       
         ./configure --prefix=`pwd`/build &>> parallel_build.log
         make && make install
-	cp $BASE_DIR/parallel-20210422/build/bin/* $BASE_DIR/bin
+	cp $BASE_DIR/parallel-20210522/build/bin/* $BASE_DIR/bin
 	rm -rf $BASE_DIR/ior_build
 	rm -rf $BASE_DIR/parallel-*
 fi
