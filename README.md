@@ -11,14 +11,14 @@ The run_ior.sh script will
 
 For the requirement, please run:
 
-  apt update
-  apt install mpi-default-dev
-  apt install autoconf
-  apt install make
+    apt update
+    apt install mpi-default-dev
+    apt install autoconf
+    apt install make
 
 To run the script:
 
-  git clone https://github.com/deggio/cephfs_bench.git
-  cd cephfs_bench
-  chmod +x run_ior.sh
-  ./run_ior.sh
+    git clone https://github.com/deggio/cephfs_bench.git
+    cd cephfs_bench
+    chmod +x run_ior.sh
+    ./run_ior.sh
