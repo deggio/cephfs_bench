@@ -1,7 +1,9 @@
 #!/bin/bash
 
 BASE_DIR="$HOME/cephfs_bench"
-WORK_DIR="`mktemp -d $BASE_DIR/benchmark_XXXXXX`"
+WORK_DIR="`mktemp -d $BASE_DIR/benchmark_XXXXXXX`"
+RUN_ID=`basename $WORK_DIR`
+RESULT_DIR="$BASE_DIR/RESULTS"
 
 
 # THREAD
@@ -19,7 +21,7 @@ lsof $BASE_DIR
 
 # create and change dir
 mkdir -p $BASE_DIR && cd $BASE_DIR
-
+mkdir -p $RESULT_DIR
 # check if IOR already exists, otherwise clone and build
 if [ ! -f $BASE_DIR/bin/ior ]
 then
@@ -48,8 +50,11 @@ GNUP=$BASE_DIR/bin/parallel
 mkdir -p $WORK_DIR && cd $WORK_DIR
 
 # run ior
-mpirun -np $TOTAL_THREAD --allow-run-as-root --mca btl self,tcp $IOR -b $FILESIZE -t $TRANSFERSIZE -a POSIX -wr -i1 -g -F -e -o $WORK_DIR/test -k -O summaryFile=$WORK_DIR/ior.summary
+mpirun -np $TOTAL_THREAD --allow-run-as-root --mca btl self,tcp $IOR -b $FILESIZE -t $TRANSFERSIZE -a POSIX -wr -i1 -g -F -e -o $WORK_DIR/test -k -O summaryFile=$WORK_DIR/ior.summary.$RUN_ID
 
 # run gnu parallel
 $GNUP -j $TOTAL_THREAD  /usr/bin/time -v -o $WORK_DIR/md5sum.\`hostname\`.{} md5sum $WORK_DIR/test.000000{} ::: `seq -w 00 $((TOTAL_THREAD-1))`
 rm -rf $WORK_DIR/test.00000*
+
+cd $BASE_DIR
+tar -zcvf $RESULT_DIR/$RUN_ID.tgz $RUN_ID
