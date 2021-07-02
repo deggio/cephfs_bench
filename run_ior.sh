@@ -86,7 +86,7 @@ do
 	TOTAL_THREAD=`echo $key | cut -d"," -f1`
 	FILESIZE=`echo $key | cut -d"," -f2`
 	TRANSFERSIZE=`echo $key | cut -d"," -f3`
-	mpirun -np $TOTAL_THREAD --allow-run-as-root --mca btl self,tcp $IOR -b $FILESIZE -t $TRANSFERSIZE -a POSIX \
+	mpirun -np $TOTAL_THREAD -oversubscribe --allow-run-as-root --mca btl self,tcp $IOR -b $FILESIZE -t $TRANSFERSIZE -a POSIX \
 		-wr -i1 -g -F -e -o $WORK_DIR/test -k \
 		-O summaryFile=$WORK_DIR/ior.summary.threads-${TOTAL_THREAD}.filesize-${FILESIZE}.transfersize-${TRANSFERSIZE}
 
