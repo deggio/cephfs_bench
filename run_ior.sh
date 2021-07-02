@@ -30,21 +30,9 @@ lsof $BASE_DIR > $WORK_DIR/lsof
 
 test_plan=(
 	"$TOTAL_THREAD,100k,100k"
-	"$TOTAL_THREAD,200k,100k"	
-	"$TOTAL_THREAD,1m,1m"		
-	"$TOTAL_THREAD,2m,1m"		
-	"$TOTAL_THREAD,8m,1m"			
-	"1,1000m,1m"
-	"2,1000m,1m"	
-	"4,1000m,1m"		
-	"8,1000m,1m"			
-	"$TOTAL_THREAD,1000m,1"
-	"1,8000m,1m"
-	"1,16000m,1m"
-	"1,64000m,1m"
-	"1,100000m,1m"
-	"1,100000m,1m"
-	"1,200000m,1m"	
+	"1,1m,1m"
+	"2,1m,1m"
+	"4,1m,1m"
 )
 ###################
 
@@ -74,6 +62,7 @@ then
 fi
 
 IOR=$BASE_DIR/bin/ior
+MDTEST=$BASE_DIR/bin/mdtest
 GNUP=$BASE_DIR/bin/parallel
 
 mkdir -p $WORK_DIR && cd $WORK_DIR
@@ -92,6 +81,13 @@ do
 	# run gnu parallel
 	$GNUP -j $TOTAL_THREAD  /usr/bin/time -v -o $WORK_DIR/md5sum.threads-${TOTAL_THREAD}.filesize-${FILESIZE}.\`hostname\`.{} md5sum $WORK_DIR/test.000000{} ::: `seq -w 00 $((TOTAL_THREAD-1))`
 	rm -rf $WORK_DIR/test.00000*
+done
+
+# please choose carefully
+
+for process in 1 `seq 2 2 $TOTAL_THREAD`
+do
+	mpirun -np $process --allow-run-as-root --mca btl self,tcp $MDTEST -n 100 -i 3 -u -w 200k -e 200k -d $WORK_DIR/mdtest > $WORK_DIR/mdtest.thread-${process}.out 2> $WORK_DIR/mdtest.thread-${process}.err
 done
 
 cd $BASE_DIR
