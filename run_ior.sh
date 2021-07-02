@@ -30,9 +30,21 @@ lsof $BASE_DIR > $WORK_DIR/lsof
 
 test_plan=(
 	"$TOTAL_THREAD,100k,100k"
-	"1,1m,1m"
-	"2,1m,1m"
-	"4,1m,1m"
+	"$TOTAL_THREAD,200k,100k"	
+	"$TOTAL_THREAD,1m,1m"		
+	"$TOTAL_THREAD,2m,1m"		
+	"$TOTAL_THREAD,8m,1m"			
+	"1,1000m,1m"
+	"2,1000m,1m"	
+	"4,1000m,1m"		
+	"8,1000m,1m"			
+	"$TOTAL_THREAD,1000m,1"
+	"1,8000m,1m"
+	"1,16000m,1m"
+	"1,64000m,1m"
+	"1,100000m,1m"
+	"1,100000m,1m"
+	"1,200000m,1m"	
 )
 ###################
 
@@ -84,7 +96,11 @@ do
 done
 
 # please choose carefully
-
+# this mdtest will create a tree of 100 directories/files (-n)
+# repeated 3 times (-i)
+# every file/dir will be uniq
+# write 200k for each file, and read it (-w -e)
+# work in -d as root folder
 for process in 1 `seq 2 2 $TOTAL_THREAD`
 do
 	mpirun -np $process --allow-run-as-root --mca btl self,tcp $MDTEST -n 100 -i 3 -u -w 200k -e 200k -d $WORK_DIR/mdtest > $WORK_DIR/mdtest.thread-${process}.out 2> $WORK_DIR/mdtest.thread-${process}.err
