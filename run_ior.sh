@@ -5,19 +5,36 @@ WORK_DIR="`mktemp -d $BASE_DIR/benchmark_XXXXXXX`"
 RUN_ID=`basename $WORK_DIR`
 RESULT_DIR="$BASE_DIR/RESULTS"
 
-
 # THREAD
 TOTAL_THREAD=`nproc`
+# transfer size is fixed
+TRANSFERSIZE=1m
 
-## IOR parameters
-# filesize (-b) is how much a single IOR thread will write/read
-FILESIZE="1000m"
-# transfer size (-t) is how much is used for I/O
-TRANSFERSIZE="1m"
+mpicc --version > $WORK_DIR/mpicc
+lsof $BASE_DIR > $WORK_DIR/lsof
 
-echo "print mpicc version"
-mpicc --version
-lsof $BASE_DIR
+#### tests plan ####
+
+# "1,100g,1m"
+# 1 IOR process, writing 100g, using 1m blocksize
+# then 1 md5sum process reads a single file of 100g
+
+# "4,2g,1m"
+# 4 IOR process, writing 2g *each*, using 1m blocksize
+# then 4 md5sum processes read these 4 files of 2g each
+
+# "$TOTAL_THREAD,100k,100k"
+# IOR running on all the cores of the server (TOTAL_THREAD == nproc)
+# each IOR process writes a 100k file
+# using 100k blocksize
+
+test_plan=(
+	"$TOTAL_THREAD,100k,100k"
+	"1,1m,1m"
+	"2,1m,1m"
+	"4,1m,1m"
+)
+###################
 
 # create and change dir
 mkdir -p $BASE_DIR && cd $BASE_DIR
@@ -50,11 +67,20 @@ GNUP=$BASE_DIR/bin/parallel
 mkdir -p $WORK_DIR && cd $WORK_DIR
 
 # run ior
-mpirun -np $TOTAL_THREAD --allow-run-as-root --mca btl self,tcp $IOR -b $FILESIZE -t $TRANSFERSIZE -a POSIX -wr -i1 -g -F -e -o $WORK_DIR/test -k -O summaryFile=$WORK_DIR/ior.summary.$RUN_ID
+# run the test plan for this bunch of tests
+for key in ${test_plan[@]}
+do
+	TOTAL_THREAD=`echo $key | cut -d"," -f1`
+	FILESIZE=`echo $key | cut -d"," -f2`
+	TRANSFERSIZE=`echo $key | cut -d"," -f3`
+	mpirun -np $TOTAL_THREAD --allow-run-as-root --mca btl self,tcp $IOR -b $FILESIZE -t $TRANSFERSIZE -a POSIX \
+		-wr -i1 -g -F -e -o $WORK_DIR/test -k \
+		-O summaryFile=$WORK_DIR/ior.summary.threads-${TOTAL_THREAD}.filesize-${FILESIZE}.transfersize-${TRANSFERSIZE}
 
-# run gnu parallel
-$GNUP -j $TOTAL_THREAD  /usr/bin/time -v -o $WORK_DIR/md5sum.\`hostname\`.{} md5sum $WORK_DIR/test.000000{} ::: `seq -w 00 $((TOTAL_THREAD-1))`
-rm -rf $WORK_DIR/test.00000*
+	# run gnu parallel
+	$GNUP -j $TOTAL_THREAD  /usr/bin/time -v -o $WORK_DIR/md5sum.threads-${TOTAL_THREAD}.filesize-${FILESIZE}.\`hostname\`.{} md5sum $WORK_DIR/test.000000{} ::: `seq -w 00 $((TOTAL_THREAD-1))`
+	rm -rf $WORK_DIR/test.00000*
+done
 
 cd $BASE_DIR
 tar -zcvf $RESULT_DIR/$RUN_ID.tgz $RUN_ID
