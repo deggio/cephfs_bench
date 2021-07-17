@@ -88,7 +88,7 @@ do
 	TRANSFERSIZE=`echo $key | cut -d"," -f3`
 	N_NODES=`echo $key | cut -d"," -f4`
 	PER_NODE=$((TOTAL_THREAD/N_NODES))
-	mpirun -np $TOTAL_THREAD -npernode $PER_NODE --hostfile $HOSTFILE -oversubscribe --allow-run-as-root --mca btl self,tcp -display-map $IOR -b $FILESIZE -t $TRANSFERSIZE -a POSIX \
+	mpirun -np $TOTAL_THREAD -npernode $PER_NODE --hostfile $HOSTFILE -oversubscribe --allow-run-as-root --mca btl self,tcp -display-map -display-allocation --bind-to core:overload-allowed $IOR -b $FILESIZE -t $TRANSFERSIZE -a POSIX \
 		-wr -i1 -g -F -e -o $WORK_DIR/test -k \
 		-O summaryFile=$WORK_DIR/ior.summary.threads-${TOTAL_THREAD}.nodes-${N_NODES}.filesize-${FILESIZE}.transfersize-${TRANSFERSIZE} > $WORK_DIR/ior.threads-${TOTAL_THREAD}.nodes-${N_NODES}.filesize-${FILESIZE}.transfersize-${TRANSFERSIZE}.out 2> $WORK_DIR/ior.threads-${TOTAL_THREAD}.nodes-${N_NODES}.filesize-${FILESIZE}.transfersize-${TRANSFERSIZE}.err
 
@@ -105,7 +105,7 @@ done
 # work in -d as root folder
 for process in 1 2 4 $CORE_PER_NODE $((N_NODES*CORE_PER_NODE))
 do
-	mpirun -np $process --hostfile $HOSTFILE -oversubscribe --allow-run-as-root --mca btl self,tcp -display-map $MDTEST -n 100 -i 3 -u -w 200k -e 200k -d $WORK_DIR/mdtest > $WORK_DIR/mdtest.thread-${process}.out 2> $WORK_DIR/mdtest.thread-${process}.err
+	mpirun -np $process --hostfile $HOSTFILE -oversubscribe --allow-run-as-root --mca btl self,tcp -display-map -display-allocation --bind-to core:overload-allowed $MDTEST -n 100 -i 3 -u -w 200k -e 200k -d $WORK_DIR/mdtest > $WORK_DIR/mdtest.thread-${process}.out 2> $WORK_DIR/mdtest.thread-${process}.err
 done
 
 cd $BASE_DIR
