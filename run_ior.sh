@@ -1,8 +1,14 @@
 #!/bin/bash
 set -x
 
+BASE_DIR="$HOME/cephfs_bench"
+WORK_DIR="`mktemp -d $BASE_DIR/benchmark_XXXXXXX`"
+RUN_ID=`basename $WORK_DIR`
+RESULT_DIR="$BASE_DIR/RESULTS"
+
 ##################
 # PLEASE SET HERE
+# ACCORDINGLY TO YOUR ENVIRONMENT
 # where is the openmpi hostfile
 HOSTFILE="$BASE_DIR/hostfile"
 # how many cores per node
@@ -35,14 +41,6 @@ test_plan=(
 	"16,100m,1m,4"
 )
 ###################
-
-
-
-BASE_DIR="$HOME/cephfs_bench"
-WORK_DIR="`mktemp -d $BASE_DIR/benchmark_XXXXXXX`"
-RUN_ID=`basename $WORK_DIR`
-RESULT_DIR="$BASE_DIR/RESULTS"
-
 
 mpicc --version > $WORK_DIR/mpicc
 lsof $BASE_DIR > $WORK_DIR/lsof
