@@ -6,9 +6,9 @@ set -x
 # where is the openmpi hostfile
 HOSTFILE="$BASE_DIR/hostfile"
 # how many cores per node
-CORE_PER_NODE=16
+CORE_PER_NODE=60
 # how many nodes do we have
-N_NODES=4
+N_NODES=10
 ##################
 
 
