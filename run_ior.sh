@@ -4,6 +4,9 @@ BASE_DIR="$HOME/cephfs_bench"
 WORK_DIR="`mktemp -d $BASE_DIR/benchmark_XXXXXXX`"
 RUN_ID=`basename $WORK_DIR`
 RESULT_DIR="$BASE_DIR/RESULTS"
+HOSTFILE="$BASE_DIR/hostfile"
+CORE_PER_NODE=60
+N_NODES=10
 
 # THREAD
 TOTAL_THREAD=`nproc`
@@ -15,36 +18,37 @@ lsof $BASE_DIR > $WORK_DIR/lsof
 
 #### tests plan ####
 
-# "1,100g,1m"
-# 1 IOR process, writing 100g, using 1m blocksize
+# "1,100g,1m,1"
+# 1 IOR process, writing 100g, using 1m blocksize, on 1 node
 # then 1 md5sum process reads a single file of 100g
 
-# "4,2g,1m"
-# 4 IOR process, writing 2g *each*, using 1m blocksize
+# "4,2g,1m,2"
+# 4 IOR process, writing 2g *each*, using 1m blocksize, on 2 nodes
 # then 4 md5sum processes read these 4 files of 2g each
 
-# "$TOTAL_THREAD,100k,100k"
+# "$TOTAL_THREAD,100k,100k,10"
 # IOR running on all the cores of the server (TOTAL_THREAD == nproc)
 # each IOR process writes a 100k file
 # using 100k blocksize
+# on 10 nodes
 
 test_plan=(
-	"$TOTAL_THREAD,100k,100k"
-	"$TOTAL_THREAD,200k,100k"	
-	"$TOTAL_THREAD,1m,1m"		
-	"$TOTAL_THREAD,2m,1m"		
-	"$TOTAL_THREAD,8m,1m"			
-	"1,1000m,1m"
-	"2,1000m,1m"	
-	"4,1000m,1m"		
-	"8,1000m,1m"			
-	"$TOTAL_THREAD,1000m,1"
-	"1,8000m,1m"
-	"1,16000m,1m"
-	"1,64000m,1m"
-	"1,100000m,1m"
-	"1,100000m,1m"
-	"1,200000m,1m"	
+	"$TOTAL_THREAD,100k,100k,10"
+	"$TOTAL_THREAD,200k,100k,10"	
+	"$TOTAL_THREAD,1m,1m,10"		
+	"$TOTAL_THREAD,2m,1m,10"		
+	"$TOTAL_THREAD,8m,1m,10"			
+	"1,1000m,1m,1"
+	"2,1000m,1m,1"	
+	"4,1000m,1m,1"		
+	"8,1000m,1m,1"			
+	"$TOTAL_THREAD,1000m,1m,1"
+	"1,8000m,1m,1"
+	"1,16000m,1m,1"
+	"1,64000m,1m,1"
+	"1,100000m,1m,1"
+	"1,100000m,1m,1"
+	"1,200000m,1m,1"	
 )
 ###################
 
@@ -86,12 +90,14 @@ do
 	TOTAL_THREAD=`echo $key | cut -d"," -f1`
 	FILESIZE=`echo $key | cut -d"," -f2`
 	TRANSFERSIZE=`echo $key | cut -d"," -f3`
-	mpirun -np $TOTAL_THREAD -oversubscribe --allow-run-as-root --mca btl self,tcp $IOR -b $FILESIZE -t $TRANSFERSIZE -a POSIX \
+	N_NODES=`echo $key | cut -d"," -f4`
+	PER_NODE=$((TOTAL_THREAD/N_NODE))
+	mpirun -np $TOTAL_THREAD -npernode $PER_NODE --hostfile $HOSTFILE -oversubscribe --allow-run-as-root --mca btl self,tcp $IOR -b $FILESIZE -t $TRANSFERSIZE -a POSIX \
 		-wr -i1 -g -F -e -o $WORK_DIR/test -k \
-		-O summaryFile=$WORK_DIR/ior.summary.threads-${TOTAL_THREAD}.filesize-${FILESIZE}.transfersize-${TRANSFERSIZE}
+		-O summaryFile=$WORK_DIR/ior.summary.threads-${TOTAL_THREAD}.nodes-${N_NODES}.filesize-${FILESIZE}.transfersize-${TRANSFERSIZE}
 
 	# run gnu parallel
-	$GNUP -j $TOTAL_THREAD  /usr/bin/time -v -o $WORK_DIR/md5sum.threads-${TOTAL_THREAD}.filesize-${FILESIZE}.\`hostname\`.{} md5sum $WORK_DIR/test.000000{} ::: `seq -w 00 $((TOTAL_THREAD-1))`
+	$GNUP -j $PER_NODE --sshloginfile $HOSTFILE /usr/bin/time -v -o $WORK_DIR/md5sum.threads-${TOTAL_THREAD}.nodes-${N_NODES}.filesize-${FILESIZE}.\`hostname\`.{} md5sum $WORK_DIR/test.000000{} ::: `seq -w 00 $((TOTAL_THREAD-1))`
 	rm -rf $WORK_DIR/test.00000*
 done
 
