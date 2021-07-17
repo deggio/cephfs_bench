@@ -22,4 +22,8 @@ To run the script:
     git clone https://github.com/deggio/cephfs_bench.git
     cd cephfs_bench
     chmod +x run_ior.sh
+
+Then, edit the script and set variables accordingly to your environment.
+Finally, run it.
+
     ./run_ior.sh
