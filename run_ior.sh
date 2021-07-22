@@ -104,9 +104,9 @@ done
 HOW_MANY_FILES=250000
 for process in 8
 do
-	mpirun -np $process -npernode 2 --hostfile $HOSTFILE -oversubscribe --allow-run-as-root --mca btl self,tcp -display-map -display-allocation --bind-to core:overload-allowed $MDTEST -n $HOW_MANY_FILES -i 3 -u -d $WORK_DIR/mdtest > $WORK_DIR/mdtest.thread-${process}.out 2> $WORK_DIR/mdtest.thread-${process}_empty_files.err
-	mpirun -np $process -npernode 2 --hostfile $HOSTFILE -oversubscribe --allow-run-as-root --mca btl self,tcp -display-map -display-allocation --bind-to core:overload-allowed $MDTEST -n $HOW_MANY_FILES -i 3 -u -w 4k -e 4k -d $WORK_DIR/mdtest > $WORK_DIR/mdtest.thread-${process}.out 2> $WORK_DIR/mdtest.thread-${process}_4k-files.err	
-	mpirun -np $process -npernode 2 --hostfile $HOSTFILE -oversubscribe --allow-run-as-root --mca btl self,tcp -display-map -display-allocation --bind-to core:overload-allowed $MDTEST -n $HOW_MANY_FILES -i 3 -u -w 32k -e 32k -d $WORK_DIR/mdtest > $WORK_DIR/mdtest.thread-${process}.out 2> $WORK_DIR/mdtest.thread-${process}_32k-files.err		
+	mpirun -np $process -npernode 2 --hostfile $HOSTFILE -oversubscribe --allow-run-as-root --mca btl self,tcp -display-map -display-allocation --bind-to core:overload-allowed $MDTEST -n $HOW_MANY_FILES -i 3 -u -d $WORK_DIR/mdtest > $WORK_DIR/mdtest.thread-${process}_empty_files.out 2> $WORK_DIR/mdtest.thread-${process}_empty_files.err
+	mpirun -np $process -npernode 2 --hostfile $HOSTFILE -oversubscribe --allow-run-as-root --mca btl self,tcp -display-map -display-allocation --bind-to core:overload-allowed $MDTEST -n $HOW_MANY_FILES -i 3 -u -w 4k -e 4k -d $WORK_DIR/mdtest > $WORK_DIR/mdtest.thread-${process}_4k-files.out 2> $WORK_DIR/mdtest.thread-${process}_4k-files.err	
+	mpirun -np $process -npernode 2 --hostfile $HOSTFILE -oversubscribe --allow-run-as-root --mca btl self,tcp -display-map -display-allocation --bind-to core:overload-allowed $MDTEST -n $HOW_MANY_FILES -i 3 -u -w 32k -e 32k -d $WORK_DIR/mdtest > $WORK_DIR/mdtest.thread-${process}_32k-files.out 2> $WORK_DIR/mdtest.thread-${process}_32k-files.err		
 done
 
 cd $BASE_DIR
