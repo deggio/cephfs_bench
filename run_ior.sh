@@ -91,8 +91,19 @@ do
 		-O summaryFile=$WORK_DIR/ior.summary.threads-${TOTAL_THREAD}.nodes-${N_NODES}.filesize-${FILESIZE}.transfersize-${TRANSFERSIZE} > $WORK_DIR/ior.threads-${TOTAL_THREAD}.nodes-${N_NODES}.filesize-${FILESIZE}.transfersize-${TRANSFERSIZE}.out 2> $WORK_DIR/ior.threads-${TOTAL_THREAD}.nodes-${N_NODES}.filesize-${FILESIZE}.transfersize-${TRANSFERSIZE}.err
 
 	# run gnu parallel
-	$GNUP -j $PER_NODE --sshloginfile $HOSTFILE /usr/bin/time -v -o $WORK_DIR/md5sum.threads-${TOTAL_THREAD}.nodes-${N_NODES}.filesize-${FILESIZE}.\`hostname\`.{} md5sum $WORK_DIR/test.000000{} ::: `seq -w 00 $((TOTAL_THREAD-1))`
-	rm -rf $WORK_DIR/test.00000*
+	case ${#TOTAL_THREAD} in
+		2)
+			$GNUP -j $PER_NODE --sshloginfile $HOSTFILE /usr/bin/time -v -o $WORK_DIR/md5sum.threads-${TOTAL_THREAD}.nodes-${N_NODES}.filesize-${FILESIZE}.\`hostname\`.{} md5sum $WORK_DIR/test.000000{} ::: `seq -w 00 $((TOTAL_THREAD-1))`
+			;;
+		3)
+			$GNUP -j $PER_NODE --sshloginfile $HOSTFILE /usr/bin/time -v -o $WORK_DIR/md5sum.threads-${TOTAL_THREAD}.nodes-${N_NODES}.filesize-${FILESIZE}.\`hostname\`.{} md5sum $WORK_DIR/test.00000{} ::: `seq -w 000 $((TOTAL_THREAD-1))`
+			;;
+		4)
+			$GNUP -j $PER_NODE --sshloginfile $HOSTFILE /usr/bin/time -v -o $WORK_DIR/md5sum.threads-${TOTAL_THREAD}.nodes-${N_NODES}.filesize-${FILESIZE}.\`hostname\`.{} md5sum $WORK_DIR/test.0000{} ::: `seq -w 0000 $((TOTAL_THREAD-1))`
+			;;
+	esac
+	
+	rm -rf $WORK_DIR/test.0*
 done
 
 # please choose carefully
