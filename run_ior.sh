@@ -37,6 +37,7 @@ N_NODES=8
 test_plan=(
 	# total processes, filesize, transfersize, number of nodes
 	"8,100k,100k,2"
+	"16,100k,100k,4"
 	"128,10m,1m,8"
 )
 ###################
