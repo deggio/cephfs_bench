@@ -12,9 +12,9 @@ RESULT_DIR="$BASE_DIR/RESULTS"
 # where is the openmpi hostfile
 HOSTFILE="$BASE_DIR/hostfile"
 # how many cores per node
-CORE_PER_NODE=60
+CORE_PER_NODE=16
 # how many nodes do we have
-N_NODES=10
+N_NODES=8
 ##################
 
 
@@ -37,8 +37,7 @@ N_NODES=10
 test_plan=(
 	# total processes, filesize, transfersize, number of nodes
 	"8,100k,100k,2"
-	"1,100m,1m,1"
-	"16,100m,1m,4"
+	"128,10m,1m,8"
 )
 ###################
 
@@ -112,7 +111,7 @@ done
 # every file/dir will be uniq
 # write 200k for each file, and read it (-w -e)
 # work in -d as root folder
-HOW_MANY_FILES=250000
+HOW_MANY_FILES=25
 for process in 8
 do
 	mpirun -np $process -npernode 2 --hostfile $HOSTFILE -oversubscribe --allow-run-as-root --mca btl self,tcp -display-map -display-allocation --bind-to core:overload-allowed $MDTEST -n $HOW_MANY_FILES -i 3 -u -d $WORK_DIR/mdtest > $WORK_DIR/mdtest.thread-${process}_empty_files.out 2> $WORK_DIR/mdtest.thread-${process}_empty_files.err
