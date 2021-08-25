@@ -37,7 +37,7 @@ N_NODES=8
 test_plan=(
 	# total processes, filesize, transfersize, number of nodes
 	"8,100k,100k,2"
-	"16,100k,100k,4"
+	"16,200m,100k,4"
 	"128,10m,1m,8"
 )
 ###################
@@ -61,14 +61,7 @@ then
 	ldd build/bin/ior &>> ior_build.log
 	cp $BASE_DIR/ior_build/build/bin/* $BASE_DIR/bin
         cd $BASE_DIR
-        wget https://ftpmirror.gnu.org/parallel/parallel-20210522.tar.bz2
-	tar -jxvf parallel-20210522.tar.bz2
-        cd parallel-20210522
-        ./configure --prefix=`pwd`/build &>> parallel_build.log
-        make && make install
-	cp $BASE_DIR/parallel-20210522/build/bin/* $BASE_DIR/bin
 	rm -rf $BASE_DIR/ior_build
-	rm -rf $BASE_DIR/parallel-*
 	# drop client cache
 	echo "sync; echo 3 > /proc/sys/vm/drop_caches" > $BASE_DIR/bin/drop_cache
 	chmod +x $BASE_DIR/bin/drop_cache
@@ -76,7 +69,6 @@ fi
 
 IOR=$BASE_DIR/bin/ior
 MDTEST=$BASE_DIR/bin/mdtest
-GNUP=$BASE_DIR/bin/parallel
 DROPCACHE=$BASE_DIR/bin/drop_cache
 
 mkdir -p $WORK_DIR && cd $WORK_DIR
@@ -99,21 +91,8 @@ do
 		-wr -i1 -g -F -e -o $WORK_DIR/test -k \
 		-O summaryFile=$WORK_DIR/ior.summary.threads-${TOTAL_THREAD}.nodes-${N_NODES}.filesize-${FILESIZE}.transfersize-${TRANSFERSIZE} > $WORK_DIR/ior.threads-${TOTAL_THREAD}.nodes-${N_NODES}.filesize-${FILESIZE}.transfersize-${TRANSFERSIZE}.out 2> $WORK_DIR/ior.threads-${TOTAL_THREAD}.nodes-${N_NODES}.filesize-${FILESIZE}.transfersize-${TRANSFERSIZE}.err
 
-	# run gnu parallel
-	case ${#TOTAL_THREAD} in
-		1)
-			$GNUP -j $PER_NODE --sshloginfile $HOSTFILE /usr/bin/time -v -o $WORK_DIR/md5sum.threads-${TOTAL_THREAD}.nodes-${N_NODES}.filesize-${FILESIZE}.\`hostname\`.{} md5sum $WORK_DIR/test.0000000{} ::: `seq -w 0 $((TOTAL_THREAD-1))`
-			;;	
-		2)
-			$GNUP -j $PER_NODE --sshloginfile $HOSTFILE /usr/bin/time -v -o $WORK_DIR/md5sum.threads-${TOTAL_THREAD}.nodes-${N_NODES}.filesize-${FILESIZE}.\`hostname\`.{} md5sum $WORK_DIR/test.000000{} ::: `seq -w 00 $((TOTAL_THREAD-1))`
-			;;
-		3)
-			$GNUP -j $PER_NODE --sshloginfile $HOSTFILE /usr/bin/time -v -o $WORK_DIR/md5sum.threads-${TOTAL_THREAD}.nodes-${N_NODES}.filesize-${FILESIZE}.\`hostname\`.{} md5sum $WORK_DIR/test.00000{} ::: `seq -w 000 $((TOTAL_THREAD-1))`
-			;;
-		4)
-			$GNUP -j $PER_NODE --sshloginfile $HOSTFILE /usr/bin/time -v -o $WORK_DIR/md5sum.threads-${TOTAL_THREAD}.nodes-${N_NODES}.filesize-${FILESIZE}.\`hostname\`.{} md5sum $WORK_DIR/test.0000{} ::: `seq -w 0000 $((TOTAL_THREAD-1))`
-			;;
-	esac
+	# md5sum in parallel via mpirun
+	/usr/bin/time -v -o $WORK_DIR/md5sum.threads-${TOTAL_THREAD}.nodes-${N_NODES}.filesize-${FILESIZE}.transfersize-${TRANSFERSIZE}.time mpirun -np $TOTAL_THREAD -npernode $PER_NODE --hostfile $HOSTFILE -oversubscribe --allow-run-as-root --mca btl self,tcp -display-map -display-allocation --bind-to core:overload-allowed $BASE_DIR/bin/md5sum_mpi $WORK_DIR
 	
 	rm -rf $WORK_DIR/test.0*
 done
