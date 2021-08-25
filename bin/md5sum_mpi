@@ -1,0 +1,4 @@
+#!/bin/bash
+WORK_DIR=$1
+filename_with_zero="test.`printf %08d ${OMPI_COMM_WORLD_RANK}`"
+md5sum ${WORK_DIR}/$filename_with_zero
